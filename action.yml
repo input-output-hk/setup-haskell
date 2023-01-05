@@ -10,7 +10,7 @@ inputs:
     default: ''
 
   pacman-packages:
-    description: Version of cabal to install
+    description: Pacman packages to install
     default: ''
 
 outputs:
