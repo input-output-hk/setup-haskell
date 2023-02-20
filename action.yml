@@ -21,6 +21,11 @@ outputs:
 runs:
   using: "composite"
   steps:
+    - name: "Install pkg-config"
+      if: runner.os == 'macOS'
+      shell: bash
+      run: brew install pkg-config
+
     - name: Setup PKG_CONFIG_PATH
       shell: bash
       run: |
