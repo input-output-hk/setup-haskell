@@ -103,22 +103,37 @@ runs:
     # Unify the computation of the cabal store directory to a single step. This makes referencing the cabal
     # store in later steps easier.
     #
-    # We know on cabal store is located in the following locations by OS:
+    # For cabal versions prior to cabal-3.10.1.0, we know on cabal store is located in the following locations by OS:
     #
     #   Linux: /home/runner/.cabal/store
     #   MacOS: /Users/runner/.cabal/store
     #   Windows: C:\cabal\store
     #
-    # However, we compute these as best be can from information cabal provides in case this changes in the future.
+    # However, we compute these as best be can from information cabal provides.
+    #
+    # For cabal versions from cabal-3.10.1.0 onwards, XDG_CONFIG_HOME determins the location of the cabal config file
+    # and the cabal store.
     - name: "Setup cabal-store"
       id: cabal-store
       shell: bash
       run: |
         cabal help user-config
-        cabal_config_file="$(cabal help user-config | grep -A 1 'You can edit the cabal configuration file to set defaults' | tail -n 1 | xargs)"
+
+        if [ "$(printf "3.10\n${{ inputs.cabal-version }}" | sort --version-sort | head -n 1)" = "3.10" ] && [ -n "$XDG_CONFIG_HOME" ]; then
+          echo "Using xdg-config"
+          cabal_config_file="$XDG_CONFIG_HOME/cabal/config"
+        else
+          echo "Not using xdg-config"
+          cabal_config_file="$(cabal help user-config | grep -A 1 'You can edit the cabal configuration file to set defaults' | tail -n 1 | xargs)"
+        fi
+
+        echo "XDG_CONFIG_HOME=$XDG_CONFIG_HOME"
+        echo "cabal_config_file=$cabal_config_file"
 
         if [[ '${{ runner.os }}' != 'Windows' ]]; then
+          echo "branch 1"
           echo "cabal-store=$(dirname "$cabal_config_file")/store" | tee -a "$GITHUB_OUTPUT"
         else
+          echo "branch 2"
           echo "cabal-store=C:\\cabal\\store" | tee -a "$GITHUB_OUTPUT"
         fi
